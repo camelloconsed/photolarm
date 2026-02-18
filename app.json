@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Photolarm",
+    "slug": "photolarm",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.photolarm.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Photolarm necesita acceso a la cámara para escanear documentos médicos y códigos QR.",
+        "NSPhotoLibraryUsageDescription": "Photolarm necesita acceso a tus fotos para importar documentos médicos.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.photolarm.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#007AFF",
+          "sounds": [
+            "./assets/sounds/alarm1.mp3",
+            "./assets/sounds/alarm2.mp3",
+            "./assets/sounds/alarm3.mp3",
+            "./assets/sounds/alarm4.mp3",
+            "./assets/sounds/alarm5.mp3"
+          ]
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.1.20"
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "45cb1926-60e2-480c-9d15-1e75015b74ed"
+      }
+    }
+  }
+}

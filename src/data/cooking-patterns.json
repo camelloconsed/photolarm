@@ -1,0 +1,247 @@
+{
+  "recipes": {
+    "action_verbs": [
+      "cocinar",
+      "cocer",
+      "hervir",
+      "fre[ií]r",
+      "hornear",
+      "asar",
+      "tostar",
+      "mezclar",
+      "batir",
+      "picar",
+      "cortar",
+      "rallar",
+      "pelar",
+      "lavar",
+      "remojar",
+      "marinar",
+      "sazonar",
+      "condimentar",
+      "agregar",
+      "a[ñn]adir",
+      "incorporar",
+      "revolver",
+      "remover"
+    ],
+    "cooking_methods": [
+      "al horno",
+      "a la plancha",
+      "al vapor",
+      "a fuego lento",
+      "a fuego medio",
+      "a fuego alto",
+      "a ba[ñn]o mar[ií]a",
+      "en olla de presi[óo]n",
+      "en microondas",
+      "en sart[ée]n",
+      "en cacerola"
+    ],
+    "time_patterns": [
+      {
+        "pattern": "(\\d+)\\s+(?:minutos?|mins?)",
+        "type": "minutes",
+        "example": "30 minutos"
+      },
+      {
+        "pattern": "(\\d+)\\s+(?:horas?|hrs?)",
+        "type": "hours",
+        "example": "2 horas"
+      },
+      {
+        "pattern": "(\\d+)\\s+(?:segundos?|segs?)",
+        "type": "seconds",
+        "example": "45 segundos"
+      },
+      {
+        "pattern": "hasta que (?:est[ée]|se vea|se torne)",
+        "type": "until_ready",
+        "example": "hasta que esté dorado"
+      }
+    ],
+    "temperature_patterns": [
+      {
+        "pattern": "(\\d+)\\s*[°º]?\\s*[cC]",
+        "type": "celsius",
+        "example": "180°C"
+      },
+      {
+        "pattern": "(\\d+)\\s*[°º]?\\s*[fF]",
+        "type": "fahrenheit",
+        "example": "350°F"
+      },
+      {
+        "pattern": "horno (?:pre)?caliente",
+        "type": "preheated",
+        "example": "horno precaliente"
+      }
+    ],
+    "quantity_patterns": [
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(?:tazas?)",
+        "unit": "cup",
+        "example": "2 tazas"
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(?:cucharadas?|cdas?)",
+        "unit": "tablespoon",
+        "example": "3 cucharadas"
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(?:cucharaditas?|cditas?)",
+        "unit": "teaspoon",
+        "example": "1 cucharadita"
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(?:kg|kilogramos?)",
+        "unit": "kilogram",
+        "example": "1 kg"
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(?:g|gramos?)",
+        "unit": "gram",
+        "example": "500 g"
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(?:l|litros?)",
+        "unit": "liter",
+        "example": "1 litro"
+      },
+      {
+        "pattern": "(\\d+(?:\\.\\d+)?)\\s*(?:ml|mililitros?)",
+        "unit": "milliliter",
+        "example": "250 ml"
+      },
+      {
+        "pattern": "(?:una pizca|un poco)",
+        "unit": "pinch",
+        "example": "una pizca de sal"
+      },
+      {
+        "pattern": "al gusto",
+        "unit": "to_taste",
+        "example": "sal al gusto"
+      }
+    ],
+    "ingredients_categories": {
+      "proteins": [
+        "pollo",
+        "carne",
+        "res",
+        "cerdo",
+        "pescado",
+        "at[úu]n",
+        "salm[óo]n",
+        "huevo",
+        "lentejas",
+        "frijoles",
+        "garbanzos"
+      ],
+      "vegetables": [
+        "cebolla",
+        "ajo",
+        "tomate",
+        "papa",
+        "zanahoria",
+        "pimiento",
+        "br[óo]coli",
+        "espinaca",
+        "lechuga"
+      ],
+      "grains": [
+        "arroz",
+        "pasta",
+        "pan",
+        "harina",
+        "avena",
+        "quinoa"
+      ],
+      "dairy": [
+        "leche",
+        "queso",
+        "mantequilla",
+        "crema",
+        "yogur"
+      ],
+      "seasonings": [
+        "sal",
+        "pimienta",
+        "comino",
+        "or[ée]gano",
+        "tomillo",
+        "laurel",
+        "canela",
+        "az[úu]car"
+      ]
+    },
+    "step_indicators": [
+      "paso \\d+",
+      "primero",
+      "segundo",
+      "tercero",
+      "luego",
+      "despu[ée]s",
+      "a continuaci[óo]n",
+      "finalmente",
+      "por [úu]ltimo"
+    ],
+    "meal_times": [
+      {
+        "name": "desayuno",
+        "time": "08:00",
+        "example": "receta para desayuno"
+      },
+      {
+        "name": "almuerzo",
+        "time": "13:00",
+        "example": "receta para almuerzo"
+      },
+      {
+        "name": "cena",
+        "time": "20:00",
+        "example": "receta para cena"
+      },
+      {
+        "name": "merienda",
+        "time": "16:00",
+        "example": "receta para merienda"
+      }
+    ]
+  },
+  "reminders": {
+    "prep_keywords": [
+      "marinar",
+      "reposar",
+      "enfriar",
+      "descongelar",
+      "remojar",
+      "fermentar"
+    ],
+    "prep_times": [
+      {
+        "pattern": "(?:marinar|reposar)\\s+(?:por\\s+)?(\\d+)\\s+(?:horas?|hrs?)",
+        "type": "hours_before",
+        "example": "marinar por 2 horas"
+      },
+      {
+        "pattern": "(?:marinar|reposar)\\s+(?:durante\\s+)?la noche",
+        "type": "overnight",
+        "hours": 8,
+        "example": "marinar durante la noche"
+      },
+      {
+        "pattern": "(?:enfriar|refrigerar)\\s+(?:por\\s+)?(\\d+)\\s+(?:minutos?|mins?)",
+        "type": "minutes_before",
+        "example": "enfriar por 30 minutos"
+      }
+    ]
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2026-01-09",
+    "language": "es",
+    "size_bytes": 4096,
+    "total_patterns": 120
+  }
+}

@@ -1,0 +1,317 @@
+{
+  "medications": {
+    "common_names": [
+      "paracetamol",
+      "acetaminofeno",
+      "ibuprofeno",
+      "amoxicilina",
+      "glucosa",
+      "aspirina",
+      "omeprazol",
+      "metformina",
+      "losartan",
+      "atorvastatina",
+      "enalapril",
+      "captopril",
+      "diclofenaco",
+      "naproxeno",
+      "cefalexina",
+      "azitromicina",
+      "ciprofloxacino",
+      "metronidazol",
+      "ranitidina",
+      "dexametasona",
+      "insulina",
+      "levotiroxina",
+      "salbutamol",
+      "loratadina",
+      "clonazepam"
+    ],
+    "dosage_units": [
+      "mg",
+      "miligramo",
+      "miligramos",
+      "g",
+      "gramo",
+      "gramos",
+      "ml",
+      "mililitro",
+      "mililitros",
+      "tableta",
+      "tabletas",
+      "cápsula",
+      "cápsulas",
+      "comprimido",
+      "comprimidos",
+      "gota",
+      "gotas",
+      "cucharada",
+      "cucharadas",
+      "sobre",
+      "sobres",
+      "ampolla",
+      "ampollas"
+    ],
+    "frequency_patterns": [
+      {
+        "pattern": "cada\\s+(\\d+)\\s+horas?",
+        "type": "hours",
+        "example": "cada 8 horas"
+      },
+      {
+        "pattern": "(\\d+)\\s+veces?\\s+(?:al|por)\\s+d[ií]a",
+        "type": "times_per_day",
+        "example": "2 veces al día",
+        "calculation": "24 / times"
+      },
+      {
+        "pattern": "cada\\s+(\\d+)\\s+d[ií]as?",
+        "type": "days",
+        "example": "cada 3 días",
+        "calculation": "days * 24"
+      },
+      {
+        "pattern": "(?:una vez|1 vez)\\s+(?:al|por)\\s+d[ií]a",
+        "type": "fixed",
+        "hours": 24,
+        "example": "una vez al día"
+      },
+      {
+        "pattern": "(?:dos veces|2 veces)\\s+(?:al|por)\\s+d[ií]a",
+        "type": "fixed",
+        "hours": 12,
+        "example": "dos veces al día"
+      },
+      {
+        "pattern": "(?:tres veces|3 veces)\\s+(?:al|por)\\s+d[ií]a",
+        "type": "fixed",
+        "hours": 8,
+        "example": "tres veces al día"
+      },
+      {
+        "pattern": "(?:cuatro veces|4 veces)\\s+(?:al|por)\\s+d[ií]a",
+        "type": "fixed",
+        "hours": 6,
+        "example": "cuatro veces al día"
+      },
+      {
+        "pattern": "en ayunas",
+        "type": "fixed",
+        "hours": 24,
+        "example": "en ayunas",
+        "note": "Once daily, morning"
+      },
+      {
+        "pattern": "antes de (?:dormir|acostarse)",
+        "type": "fixed",
+        "hours": 24,
+        "example": "antes de dormir",
+        "note": "Once daily, night"
+      },
+      {
+        "pattern": "con cada comida",
+        "type": "fixed",
+        "hours": 8,
+        "example": "con cada comida",
+        "note": "3 times daily"
+      }
+    ],
+    "duration_patterns": [
+      {
+        "pattern": "(?:por|durante)\\s+(\\d+)\\s+d[ií][aá]s?",
+        "type": "days",
+        "example": "por 30 días",
+        "note": "Accepts 'días', 'dias', 'dlas' (OCR typos)"
+      },
+      {
+        "pattern": "(?:por|durante)\\s+(\\d+)\\s+d(?:las?|ias?)",
+        "type": "days",
+        "example": "por 3 dlas",
+        "note": "Fallback for OCR errors like 'dlas'"
+      },
+      {
+        "pattern": "(?:por|durante)\\s+(\\d+)\\s+semanas?",
+        "type": "weeks",
+        "calculation": "weeks * 7",
+        "example": "por 2 semanas"
+      },
+      {
+        "pattern": "(?:por|durante)\\s+(\\d+)\\s+mes(?:es)?",
+        "type": "months",
+        "calculation": "months * 30",
+        "example": "por 3 meses"
+      },
+      {
+        "pattern": "hasta terminar",
+        "type": "until_finished",
+        "default_days": 30,
+        "example": "hasta terminar el tratamiento"
+      },
+      {
+        "pattern": "uso continuo",
+        "type": "continuous",
+        "default_days": 90,
+        "example": "uso continuo"
+      }
+    ],
+    "administration_routes": [
+      {
+        "name": "oral",
+        "patterns": ["v[ií]a oral", "por boca", "oral"]
+      },
+      {
+        "name": "intravenosa",
+        "patterns": ["v[ií]a intravenosa", "iv", "endovenosa"]
+      },
+      {
+        "name": "intramuscular",
+        "patterns": ["v[ií]a intramuscular", "im", "intramuscular"]
+      },
+      {
+        "name": "subcutánea",
+        "patterns": ["v[ií]a subcut[áa]nea", "sc", "subcut[áa]nea"]
+      },
+      {
+        "name": "tópica",
+        "patterns": ["v[ií]a t[óo]pica", "t[óo]pica", "en la piel"]
+      },
+      {
+        "name": "sublingual",
+        "patterns": ["v[ií]a sublingual", "sublingual", "bajo la lengua"]
+      },
+      {
+        "name": "oftálmica",
+        "patterns": ["oftálmica", "en los ojos", "ocular"]
+      },
+      {
+        "name": "ótica",
+        "patterns": ["ótica", "en los oídos", "auricular"]
+      },
+      {
+        "name": "nasal",
+        "patterns": ["nasal", "en la nariz"]
+      },
+      {
+        "name": "rectal",
+        "patterns": ["rectal", "por v[ií]a rectal"]
+      }
+    ],
+    "special_instructions": [
+      {
+        "pattern": "en ayunas",
+        "note": "Take on empty stomach"
+      },
+      {
+        "pattern": "con alimentos",
+        "note": "Take with food"
+      },
+      {
+        "pattern": "antes de (?:las comidas|comer)",
+        "note": "Take before meals"
+      },
+      {
+        "pattern": "despu[ée]s de (?:las comidas|comer)",
+        "note": "Take after meals"
+      },
+      {
+        "pattern": "con abundante agua",
+        "note": "Take with plenty of water"
+      },
+      {
+        "pattern": "no triturar ni masticar",
+        "note": "Do not crush or chew"
+      },
+      {
+        "pattern": "disolver en agua",
+        "note": "Dissolve in water"
+      },
+      {
+        "pattern": "agitar antes de usar",
+        "note": "Shake before use"
+      },
+      {
+        "pattern": "refrigerar",
+        "note": "Keep refrigerated"
+      },
+      {
+        "pattern": "proteger de la luz",
+        "note": "Protect from light"
+      }
+    ]
+  },
+  "appointments": {
+    "keywords": [
+      "cita",
+      "consulta",
+      "control",
+      "seguimiento",
+      "revisi[óo]n",
+      "chequeo",
+      "valoraci[óo]n",
+      "evaluaci[óo]n"
+    ],
+    "specialties": [
+      "medicina general",
+      "pediatr[ií]a",
+      "cardiolog[ií]a",
+      "dermatolog[ií]a",
+      "oftalmolog[ií]a",
+      "odontolog[ií]a",
+      "ginecolog[ií]a",
+      "traumatolog[ií]a",
+      "neurolog[ií]a",
+      "psiquiatr[ií]a",
+      "endocrinolog[ií]a",
+      "urolog[ií]a"
+    ],
+    "date_patterns": [
+      {
+        "pattern": "(\\d{1,2})\\s+(?:de\\s+)?(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\\s+(\\d{4})",
+        "format": "dd month yyyy",
+        "example": "15 enero 2026"
+      },
+      {
+        "pattern": "(\\d{1,2})/(\\d{1,2})/(\\d{4})",
+        "format": "dd/mm/yyyy",
+        "example": "15/01/2026"
+      },
+      {
+        "pattern": "(\\d{1,2})-(\\d{1,2})-(\\d{4})",
+        "format": "dd-mm-yyyy",
+        "example": "15-01-2026"
+      }
+    ],
+    "time_patterns": [
+      {
+        "pattern": "(\\d{1,2}):(\\d{2})\\s*(am|pm)",
+        "format": "12h",
+        "example": "10:30am"
+      },
+      {
+        "pattern": "(\\d{1,2}):(\\d{2})",
+        "format": "24h",
+        "example": "14:30"
+      },
+      {
+        "pattern": "(\\d{1,2})\\s*(am|pm)",
+        "format": "12h_simple",
+        "example": "10am"
+      }
+    ],
+    "location_keywords": [
+      "cl[ií]nica",
+      "hospital",
+      "centro",
+      "consultorio",
+      "instituto",
+      "policl[ií]nica"
+    ]
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2026-01-09",
+    "language": "es",
+    "size_bytes": 5120,
+    "total_patterns": 85
+  }
+}
