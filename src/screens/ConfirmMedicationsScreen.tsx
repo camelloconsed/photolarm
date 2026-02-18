@@ -26,6 +26,7 @@ import {
 import { useLearnedPatternsStore } from '@/store/learned-patterns.store';
 import { usePlansStore } from '@/store';
 import { PatternBasedExtractorService } from '@/services/extractor.service.patterns';
+import { getMedicationVocabularyService } from '@/services/medication-vocabulary.service';
 import { hasChanges } from '@/lib/pattern-matcher';
 import type { 
   DetectedMedication,
@@ -47,6 +48,9 @@ export function ConfirmMedicationsScreen({ navigation, route }: Props) {
   const [validatedMedications, setValidatedMedications] = useState<ValidatedMedication[]>([]);
   const [rejectedIndices, setRejectedIndices] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Mantener la misma instancia del extractor durante toda la sesión
+  const [extractor] = useState(() => new PatternBasedExtractorService({ useSymSpell: false }));
 
   const { findMatch, saveValidation } = useLearnedPatternsStore();
   const { addPlans } = usePlansStore();
@@ -61,7 +65,6 @@ export function ConfirmMedicationsScreen({ navigation, route }: Props) {
       setIsLoading(true);
       
       // Usar el servicio de patrones para extraer
-      const extractor = new PatternBasedExtractorService({ useSymSpell: false });
       const result = await extractor.extractPlans(ocrText);
 
       if (!result.success || !result.plans || result.plans.length === 0) {
@@ -116,7 +119,7 @@ export function ConfirmMedicationsScreen({ navigation, route }: Props) {
     }
   };
 
-  const handleConfirm = (index: number, values: ExtractedMedicationValues) => {
+  const handleConfirm = async (index: number, values: ExtractedMedicationValues) => {
     const detected = detectedMedications[index];
     const wasChanged = hasChanges(detected.extractedValues, values);
 
@@ -134,6 +137,33 @@ export function ConfirmMedicationsScreen({ navigation, route }: Props) {
       updated.splice(index, 0, validated);
       return updated;
     });
+
+    // Guardar medicamento en vocabulario si fue confirmado o corregido
+    try {
+      const vocabService = getMedicationVocabularyService();
+      const originalName = detected.extractedValues.medication_name;
+      const validatedName = values.medication_name;
+      
+      // Si el nombre cambió, guardar el corregido
+      if (wasChanged && originalName !== validatedName) {
+        await vocabService.saveMedication(validatedName, originalName);
+        console.log(`📚 Saved corrected medication: ${validatedName} (was: ${originalName})`);
+      } 
+      // Si fue sugerido (baja confianza) y el usuario lo confirmó sin cambios
+      else if (!wasChanged && detected.confidence < 0.7) {
+        await vocabService.saveMedication(validatedName);
+        console.log(`📚 Confirmed suggested medication: ${validatedName}`);
+      }
+      // Si el usuario editó algo (aunque no sea el nombre)
+      else if (wasChanged) {
+        await vocabService.saveMedication(validatedName);
+        console.log(`📚 Saved validated medication: ${validatedName}`);
+      }      
+      // IMPORTANTE: Refrescar vocabulario en el extractor para la próxima extracción
+      await extractor.refreshVocabulary();    } catch (error) {
+      console.error('Error saving medication to vocabulary:', error);
+      // No bloqueamos el flujo si falla el guardado
+    }
 
     console.log('✅ Medication confirmed:', {
       medication: values.medication_name,

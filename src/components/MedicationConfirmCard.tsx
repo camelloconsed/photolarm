@@ -78,6 +78,15 @@ export function MedicationConfirmCard({
         <Text style={[styles.confidenceText, { color: getConfidenceColor() }]}>
           {getConfidenceText()} ({Math.round(confidence * 100)}%)
         </Text>
+        
+        {/* Warning para confianza baja */}
+        {confidence < 0.7 && (
+          <View style={styles.suggestionWarning}>
+            <Text style={styles.suggestionWarningText}>
+              ⚠️ Este nombre fue sugerido por similitud. Por favor verifica que sea correcto.
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Form Fields */}
@@ -86,12 +95,20 @@ export function MedicationConfirmCard({
         <View style={styles.field}>
           <Text style={styles.label}>💊 Medicamento</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              confidence < 0.7 && styles.inputSuggestion
+            ]}
             value={medication}
             onChangeText={setMedication}
             placeholder="Nombre del medicamento"
             autoCapitalize="words"
           />
+          {confidence < 0.7 && (
+            <Text style={styles.fieldHint}>
+              👆 Verificar el nombre - fue sugerido automáticamente
+            </Text>
+          )}
         </View>
 
         {/* Dosis */}
@@ -233,6 +250,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
+  suggestionWarning: {
+    marginTop: 12,
+    backgroundColor: '#FFF3CD',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FFE69C',
+  },
+  suggestionWarningText: {
+    fontSize: 12,
+    color: '#856404',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
   form: {
     padding: 16,
     paddingTop: 8,
@@ -254,6 +285,17 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     borderWidth: 1,
     borderColor: '#E5E5EA',
+  },
+  inputSuggestion: {
+    backgroundColor: '#FFF9E6',
+    borderColor: '#FFE69C',
+    borderWidth: 2,
+  },
+  fieldHint: {
+    fontSize: 11,
+    color: '#856404',
+    fontWeight: '500',
+    marginTop: 4,
   },
   numberInputContainer: {
     flexDirection: 'row',

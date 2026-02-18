@@ -8,6 +8,8 @@
 import medicalPatterns from '../data/medical-patterns.json';
 import cookingPatterns from '../data/cooking-patterns.json';
 import { getSymSpellService } from './symspell.service';
+import { getMedicationVocabularyService } from './medication-vocabulary.service';
+import { findClosestMedicationName } from '../lib/pattern-matcher';
 import type {
   IExtractorService,
   ExtractorContext,
@@ -17,6 +19,8 @@ import type { DocumentParse } from '../types';
 export class PatternBasedExtractorService implements IExtractorService {
   private useSymSpell: boolean = false; // Enable/disable SymSpell
   private symSpellInitialized: boolean = false;
+  private knownMedications: string[] = [];
+  private medicationsLoaded: boolean = false;
 
   constructor(options?: { useSymSpell?: boolean }) {
     this.useSymSpell = options?.useSymSpell ?? false;
@@ -25,6 +29,37 @@ export class PatternBasedExtractorService implements IExtractorService {
     if (this.useSymSpell) {
       this.initializeSymSpell();
     }
+    
+    // Don't load here - will lazy load on first use
+    // This prevents async constructor issues
+  }
+
+  /**
+   * Lazy load known medications (base + learned)
+   * Called automatically on first use
+   */
+  private async ensureMedicationsLoaded(): Promise<void> {
+    if (this.medicationsLoaded) return;
+    
+    try {
+      const vocabService = getMedicationVocabularyService();
+      this.knownMedications = await vocabService.getAllKnownMedications();
+      this.medicationsLoaded = true;
+      console.log(`📚 Loaded ${this.knownMedications.length} known medications (${medicalPatterns.medications.common_names.length} base + ${this.knownMedications.length - medicalPatterns.medications.common_names.length} learned)`);
+    } catch (error) {
+      console.warn('⚠️ Failed to load learned medications, using base only:', error);
+      this.knownMedications = medicalPatterns.medications.common_names;
+      this.medicationsLoaded = true;
+    }
+  }
+
+  /**
+   * Refresh known medications (call after saving new medications)
+   */
+  async refreshVocabulary(): Promise<void> {
+    this.medicationsLoaded = false;
+    await this.ensureMedicationsLoaded();
+    console.log('🔄 Vocabulary refreshed');
   }
 
   private async initializeSymSpell(): Promise<void> {
@@ -130,7 +165,52 @@ export class PatternBasedExtractorService implements IExtractorService {
       .replace(/[\u0300-\u036f]/g, ''); // Remove accents
   }
 
-  private extractMedications(text: string): Array<{
+  /**
+   * Checks if a line has potential medication-like words
+   * (for handling OCR errors like "clariyromocina" instead of "claritromicina")
+   */
+  private lineHasPotentialMedication(normalizedLine: string): boolean {
+    // Split into words
+    const words = normalizedLine.split(/\s+/);
+    
+    for (const word of words) {
+      // Skip short words, numbers, and common words
+      if (word.length < 7) continue;
+      if (/^\d+$/.test(word)) continue;
+      if (/^(tableta|capsula|comprimido|tomar|cada|durante|horas?)$/i.test(word)) continue;
+      
+      // Check if the word looks like a medication name:
+      // - 7+ characters (medication names are usually long)
+      // - Contains typical medication endings (including OCR variations)
+      const hasMedicationEnding = /(?:cilina|cillna|prazol|praz0l|eno|ena|ina|ino|ocina|omicina|icina|ato|mina|olol|pina|xina|tina|feno)$/.test(word);
+      
+      // If it matches these criteria, consider it a potential medication
+      if (hasMedicationEnding) {
+        console.log(`🔍 Potential medication detected by ending: "${word}"`);
+        return true;
+      }
+      
+      // Also check if it's similar to any known medication using fuzzy match
+      const medicationsToSearch = this.knownMedications.length > 0 
+        ? this.knownMedications 
+        : medicalPatterns.medications.common_names;
+      
+      const closestMatch = findClosestMedicationName(
+        word,
+        medicationsToSearch,
+        0.60  // Lower threshold for initial detection to catch more OCR errors
+      );
+      
+      if (closestMatch) {
+        console.log(`🔍 Potential medication detected by fuzzy match: "${word}" → "${closestMatch.name}" (${(closestMatch.similarity * 100).toFixed(1)}%)`);
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+  private async extractMedications(text: string): Promise<Array<{
     name: string;
     dosage: string;
     intervalHours: number;
@@ -138,7 +218,10 @@ export class PatternBasedExtractorService implements IExtractorService {
     administration: string;
     evidence: string;
     confidence: number;
-  }> {
+  }>> {
+    // Ensure medications are loaded before processing
+    await this.ensureMedicationsLoaded();
+    
     const medications: Map<string, any> = new Map();
     
     // Text already cleaned by extractPlans
@@ -152,17 +235,49 @@ export class PatternBasedExtractorService implements IExtractorService {
     for (const line of lines) {
       const lineNormalized = this.normalizeText(line);
       
-      // Check if line contains any medication names
-      const medicationsInLine = medicalPatterns.medications.common_names.filter(
+      // Check if line contains any medication names (exact match)
+      // Use learned medications + base medications
+      const medicationsToSearch = this.knownMedications.length > 0 
+        ? this.knownMedications 
+        : medicalPatterns.medications.common_names;
+      
+      const medicationsInLine = medicationsToSearch.filter(
         med => lineNormalized.includes(med)
       );
       
-      if (medicationsInLine.length === 0) {
-        // No medication in this line, skip
+      // If no exact match, check if line has potential medication-like words
+      // (words that are 5+ chars, could be typos of medication names)
+      const hasPotentialMedication = medicationsInLine.length === 0 
+        ? this.lineHasPotentialMedication(lineNormalized)
+        : true;
+      
+      if (!hasPotentialMedication && medicationsInLine.length === 0) {
+        // No medication or potential medication in this line, skip
         continue;
       }
       
-      if (medicationsInLine.length === 1) {
+      // Handle potential medications (no exact match but looks like a medication)
+      if (medicationsInLine.length === 0 && hasPotentialMedication) {
+        // Potential medication (like OCR typo): take this line + next 2 lines
+        let block = line;
+        const currentIndex = lines.indexOf(line);
+        for (let i = 1; i <= 2; i++) {
+          if (currentIndex + i < lines.length) {
+            const nextLine = lines[currentIndex + i];
+            const nextLineNormalized = this.normalizeText(nextLine);
+            // Stop if we find another medication
+            const medicationsToCheck = this.knownMedications.length > 0 
+              ? this.knownMedications 
+              : medicalPatterns.medications.common_names;
+            const hasAnotherMed = medicationsToCheck.some(
+              med => nextLineNormalized.includes(med)
+            );
+            if (hasAnotherMed) break;
+            block += '\n' + nextLine;
+          }
+        }
+        blocks.push(block.trim());
+      } else if (medicationsInLine.length === 1) {
         // Single medication: take this line + next 2 lines
         let block = line;
         const currentIndex = lines.indexOf(line);
@@ -171,7 +286,10 @@ export class PatternBasedExtractorService implements IExtractorService {
             const nextLine = lines[currentIndex + i];
             const nextLineNormalized = this.normalizeText(nextLine);
             // Stop if we find another medication
-            const hasAnotherMed = medicalPatterns.medications.common_names.some(
+            const medicationsToCheck = this.knownMedications.length > 0 
+              ? this.knownMedications 
+              : medicalPatterns.medications.common_names;
+            const hasAnotherMed = medicationsToCheck.some(
               med => nextLineNormalized.includes(med)
             );
             if (hasAnotherMed) break;
@@ -201,11 +319,55 @@ export class PatternBasedExtractorService implements IExtractorService {
         normalized: blockNormalized
       });
       
-      // Find medication name
-      const medName = medicalPatterns.medications.common_names.find(
-        med => blockNormalized.includes(med)
+      // Find medication name using fuzzy matching
+      // Use learned medications + base medications
+      const medicationsToSearch = this.knownMedications.length > 0 
+        ? this.knownMedications 
+        : medicalPatterns.medications.common_names;
+      
+      // Extract the medication word from the block (usually the first long word)
+      const words = blockNormalized.split(/\s+/);
+      let medicationWord = '';
+      
+      for (const word of words) {
+        // Skip short words, numbers, and common words
+        if (word.length < 7) continue;
+        if (/^\d+$/.test(word)) continue;
+        if (/^(tableta|capsula|comprimido|tomar|cada|durante|horas?)$/i.test(word)) continue;
+        
+        // This is likely the medication name
+        medicationWord = word;
+        break;
+      }
+      
+      // If no medication word found, try with the whole block (fallback)
+      const searchTerm = medicationWord || blockNormalized;
+      
+      console.log('🔍 Searching for medication:', {
+        searchTerm,
+        blockPreview: blockNormalized.substring(0, 50)
+      });
+        
+      const medicationMatch = findClosestMedicationName(
+        searchTerm,
+        medicationsToSearch,
+        0.55  // Threshold más bajo para aceptar más variaciones
       );
-      if (!medName) continue;
+      
+      if (!medicationMatch) {
+        console.log('⚠️ No medication match found for:', searchTerm);
+        continue;
+      }
+      
+      const medName = medicationMatch.name;
+      const isSuggestedName = !medicationMatch.isExactMatch;
+      
+      console.log('💊 Medication matched:', {
+        detected: blockNormalized.substring(0, 30),
+        matched: medName,
+        similarity: medicationMatch.similarity,
+        isSuggestion: isSuggestedName
+      });
 
       // Extract dosage
       const dosagePattern = new RegExp(
@@ -217,7 +379,10 @@ export class PatternBasedExtractorService implements IExtractorService {
 
       // Extract frequency
       let intervalHours = 24;
-      let confidence = 0.6;
+      // Base confidence on medication match similarity
+      let confidence = isSuggestedName 
+        ? medicationMatch.similarity * 0.7  // Penalizar sugerencias
+        : 0.8;  // Match exacto tiene alta confianza inicial
 
       for (const freqPattern of medicalPatterns.medications.frequency_patterns) {
         const regex = new RegExp(freqPattern.pattern, 'i');
@@ -473,7 +638,7 @@ export class PatternBasedExtractorService implements IExtractorService {
     const plans = [];
 
     // Extract medications (Step 2: Pattern matching with dictionaries - Layer 2)
-    const medications = this.extractMedications(cleanedText);
+    const medications = await this.extractMedications(cleanedText);
     
     // Step 3: If confidence is low and SymSpell is enabled, try spell correction (Layer 3)
     const lowConfidenceMeds = medications.filter(med => med.confidence < 0.65);
@@ -485,7 +650,7 @@ export class PatternBasedExtractorService implements IExtractorService {
         console.log('✨ SymSpell applied additional corrections');
         
         // Re-extract with corrected text
-        const reExtracted = this.extractMedications(cleanedText);
+        const reExtracted = await this.extractMedications(cleanedText);
         
         // Replace low-confidence items with re-extracted ones if better
         reExtracted.forEach(reMed => {

@@ -14,6 +14,8 @@ export interface ExtractedMedicationValues {
   duration_days: number;      // 6
   dosage?: string;            // "500 mg" (opcional)
   administration?: string;    // "oral" (opcional)
+  is_name_suggestion?: boolean; // true si el nombre fue sugerido por fuzzy match
+  name_similarity?: number;    // 0-1, similitud del nombre si es sugerencia
 }
 
 /**

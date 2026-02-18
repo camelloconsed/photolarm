@@ -210,3 +210,50 @@ export function hasChanges(
     original.dosage !== validated.dosage
   );
 }
+
+/**
+ * Busca el nombre de medicamento más similar en una lista
+ * Retorna el nombre más cercano y su score de similitud
+ */
+export function findClosestMedicationName(
+  detectedName: string,
+  knownMedications: string[],
+  minSimilarity: number = 0.6
+): { name: string; similarity: number; isExactMatch: boolean } | null {
+  if (!detectedName || knownMedications.length === 0) return null;
+
+  const normalized = normalizePhrase(detectedName);
+  let bestMatch: string | null = null;
+  let bestSimilarity = 0;
+
+  for (const medication of knownMedications) {
+    // Primero verifica si hay match exacto (contiene el medicamento completo)
+    const medNormalized = normalizePhrase(medication);
+    if (normalized.includes(medNormalized) || medNormalized.includes(normalized)) {
+      return {
+        name: medication,
+        similarity: 1.0,
+        isExactMatch: true,
+      };
+    }
+
+    // Si no hay match exacto, calcula similitud
+    const similarity = calculateSimilarity(normalized, medNormalized);
+    
+    if (similarity > bestSimilarity) {
+      bestSimilarity = similarity;
+      bestMatch = medication;
+    }
+  }
+
+  // Solo retorna si la similitud supera el threshold
+  if (bestMatch && bestSimilarity >= minSimilarity) {
+    return {
+      name: bestMatch,
+      similarity: bestSimilarity,
+      isExactMatch: false,
+    };
+  }
+
+  return null;
+}
